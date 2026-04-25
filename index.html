@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#23c5f4" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Axolotl Sim" />
+    <title>Axolotl Sim</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/processed/icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="app" aria-label="Axolotl Sim">
+      <canvas id="game" aria-label="Spelyta"></canvas>
+      <section id="overlay" class="overlay is-visible">
+        <div class="panel">
+          <h1>Axolotl Sim</h1>
+          <p>Tryck för att simma uppåt. Samla stjärnor och undvik tången.</p>
+          <button id="startButton" type="button">Starta</button>
+        </div>
+      </section>
+      <button id="pauseButton" class="pause-button" type="button" aria-label="Pausa">
+        <span></span>
+        <span></span>
+      </button>
+    </main>
+    <script src="game.js" defer></script>
+  </body>
+</html>
