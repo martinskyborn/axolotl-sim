@@ -24,8 +24,6 @@ body {
 #app {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100svh;
   overflow: hidden;
   background: #13b8ec;
 }
@@ -137,5 +135,104 @@ body {
 }
 
 .pause-button.is-hidden {
+  display: none;
+}
+
+.name-entry {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.name-entry.is-hidden {
+  display: none;
+}
+
+.name-entry input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  outline: none;
+}
+
+.name-entry input:focus {
+  border-color: #1fb8ea;
+}
+
+.name-entry button {
+  padding: 0 16px;
+  min-height: 48px;
+  border: 0;
+  border-radius: 8px;
+  background: linear-gradient(#ffec63, #ffb632);
+  color: #7a4a00;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 900;
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.65),
+    0 4px 0 #ce7727;
+}
+
+.name-entry button:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.65),
+    0 1px 0 #ce7727;
+}
+
+.leaderboard {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.leaderboard.is-hidden {
+  display: none;
+}
+
+.leaderboard li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 2px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.leaderboard li:last-child {
+  border-bottom: none;
+}
+
+.leaderboard li.is-new {
+  color: #d97000;
+}
+
+.link-button {
+  display: block;
+  margin-top: 10px;
+  border: none;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.link-button.is-hidden,
+#startButton.is-hidden {
   display: none;
 }

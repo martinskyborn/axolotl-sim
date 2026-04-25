@@ -19,7 +19,13 @@
         <div class="panel">
           <h1>Axolotl Sim</h1>
           <p>Tryck för att simma uppåt. Samla stjärnor och undvik tången.</p>
+          <div id="nameEntry" class="name-entry is-hidden">
+            <input id="nameInput" type="text" placeholder="Ditt namn" maxlength="18" autocomplete="off" spellcheck="false" />
+            <button id="saveButton" type="button">Spara</button>
+          </div>
+          <ol id="leaderboardEl" class="leaderboard is-hidden"></ol>
           <button id="startButton" type="button">Starta</button>
+          <button id="leaderboardButton" type="button" class="link-button is-hidden">Topplista</button>
         </div>
       </section>
       <button id="pauseButton" class="pause-button" type="button" aria-label="Pausa">

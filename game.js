@@ -4,6 +4,11 @@
   const overlay = document.getElementById("overlay");
   const startButton = document.getElementById("startButton");
   const pauseButton = document.getElementById("pauseButton");
+  const nameEntry = document.getElementById("nameEntry");
+  const nameInput = document.getElementById("nameInput");
+  const saveButton = document.getElementById("saveButton");
+  const leaderboardEl = document.getElementById("leaderboardEl");
+  const leaderboardButton = document.getElementById("leaderboardButton");
 
   const ASSETS = {
     background: "assets/generated/background.png",
@@ -58,6 +63,30 @@
     });
   }
 
+  function getScores() {
+    try { return JSON.parse(localStorage.getItem("axolotl-scores") || "[]"); }
+    catch { return []; }
+  }
+
+  function addScore(name, score) {
+    const scores = getScores();
+    const entry = { name: name.trim() || "Anonym", score };
+    scores.push(entry);
+    scores.sort((a, b) => b.score - a.score);
+    const idx = scores.findIndex(s => s === entry);
+    localStorage.setItem("axolotl-scores", JSON.stringify(scores.slice(0, 20)));
+    return idx;
+  }
+
+  function renderLeaderboard(highlightIndex = -1) {
+    const scores = getScores().slice(0, 10);
+    leaderboardEl.innerHTML = scores.length
+      ? scores.map((s, i) =>
+          `<li class="${i === highlightIndex ? "is-new" : ""}"><span>#${i + 1} ${s.name}</span><span>${s.score}</span></li>`
+        ).join("")
+      : "<li><span>Inga poäng ännu</span><span></span></li>";
+  }
+
   function resize() {
     const appEl = document.getElementById("app");
     const width = Math.max(320, Math.round(appEl.clientWidth));
@@ -75,8 +104,14 @@
 
   function setOverlay(title, text, button) {
     overlay.querySelector("h1").textContent = title;
-    overlay.querySelector("p").textContent = text;
+    const pEl = overlay.querySelector("p");
+    pEl.textContent = text;
+    pEl.style.display = "";
     startButton.textContent = button;
+    startButton.classList.remove("is-hidden");
+    nameEntry.classList.add("is-hidden");
+    leaderboardEl.classList.add("is-hidden");
+    leaderboardButton.classList.add("is-hidden");
     overlay.classList.add("is-visible");
     pauseButton.classList.add("is-hidden");
   }
@@ -160,6 +195,12 @@
     unlockAudio();
     if (audioContext?.state === "suspended") audioContext.resume();
     if (state.mode === "loading") return;
+    if (state.mode === "leaderboard") {
+      state.mode = "ready";
+      setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
+      leaderboardButton.classList.remove("is-hidden");
+      return;
+    }
     if (state.mode === "paused") {
       state.mode = "playing";
       hideOverlay();
@@ -256,7 +297,18 @@
     state.mode = "over";
     state.best = Math.max(state.best, state.score);
     localStorage.setItem("axolotl-best", String(state.best));
-    setOverlay("Bra jobbat!", `Poäng: ${state.score}  Bästa: ${state.best}`, "Spela igen");
+    overlay.querySelector("h1").textContent = "Bra jobbat!";
+    const pEl = overlay.querySelector("p");
+    pEl.textContent = `Poäng: ${state.score}  |  Bästa: ${state.best}`;
+    pEl.style.display = "";
+    startButton.classList.add("is-hidden");
+    leaderboardButton.classList.add("is-hidden");
+    nameEntry.classList.remove("is-hidden");
+    leaderboardEl.classList.add("is-hidden");
+    nameInput.value = "";
+    overlay.classList.add("is-visible");
+    pauseButton.classList.add("is-hidden");
+    setTimeout(() => nameInput.focus(), 80);
   }
 
   function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {
@@ -528,6 +580,7 @@
     for (let i = 0; i < 14; i += 1) addAmbientBubble();
     render();
     setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
+    leaderboardButton.classList.remove("is-hidden");
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
     }
@@ -556,6 +609,32 @@
   pauseButton.addEventListener("click", (event) => {
     event.stopPropagation();
     pauseGame();
+  });
+  saveButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const idx = addScore(nameInput.value, state.score);
+    nameEntry.classList.add("is-hidden");
+    overlay.querySelector("p").style.display = "none";
+    renderLeaderboard(idx);
+    leaderboardEl.classList.remove("is-hidden");
+    startButton.textContent = "Spela igen";
+    startButton.classList.remove("is-hidden");
+  });
+  nameInput.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Enter") saveButton.click();
+  });
+  leaderboardButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    state.mode = "leaderboard";
+    overlay.querySelector("h1").textContent = "Topplista";
+    overlay.querySelector("p").style.display = "none";
+    nameEntry.classList.add("is-hidden");
+    renderLeaderboard();
+    leaderboardEl.classList.remove("is-hidden");
+    startButton.textContent = "Tillbaka";
+    startButton.classList.remove("is-hidden");
+    leaderboardButton.classList.add("is-hidden");
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseGame();
