@@ -59,8 +59,9 @@
   }
 
   function resize() {
-    const width = Math.max(320, Math.round(window.innerWidth));
-    const height = Math.max(560, Math.round(window.innerHeight));
+    const appEl = document.getElementById("app");
+    const width = Math.max(320, Math.round(appEl.clientWidth));
+    const height = Math.max(560, Math.round(appEl.clientHeight));
     state.dpr = 1;
     state.width = width;
     state.height = height;
