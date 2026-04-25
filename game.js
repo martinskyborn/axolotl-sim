@@ -1,4 +1,7 @@
 (() => {
+  const SUPABASE_URL = "https://uegujtsohwoyvnlcgesn.supabase.co";
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVlZ3VqdHNvaHdveXZubGNnZXNuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxMzg2NzEsImV4cCI6MjA5MjcxNDY3MX0.AWyV80l-k-pa4_XvqFCS7HupLU-sh69YCNUbI3AzDCY";
+
   const canvas = document.getElementById("game");
   const ctx = canvas.getContext("2d", { alpha: false });
   const overlay = document.getElementById("overlay");
@@ -63,26 +66,38 @@
     });
   }
 
-  function getScores() {
-    try { return JSON.parse(localStorage.getItem("axolotl-scores") || "[]"); }
-    catch { return []; }
+  const sbHeaders = {
+    apikey: SUPABASE_ANON,
+    Authorization: `Bearer ${SUPABASE_ANON}`,
+    "Content-Type": "application/json",
+  };
+
+  async function fetchScores() {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/scores?order=score.desc&limit=10`, { headers: sbHeaders });
+      return res.ok ? res.json() : [];
+    } catch { return []; }
   }
 
-  function addScore(name, score) {
-    const scores = getScores();
-    const entry = { name: name.trim() || "Anonym", score };
-    scores.push(entry);
-    scores.sort((a, b) => b.score - a.score);
-    const idx = scores.findIndex(s => s === entry);
-    localStorage.setItem("axolotl-scores", JSON.stringify(scores.slice(0, 20)));
-    return idx;
+  async function saveScore(name, score) {
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/scores`, {
+        method: "POST",
+        headers: { ...sbHeaders, Prefer: "return=minimal" },
+        body: JSON.stringify({ name, score }),
+      });
+    } catch { /* silent fail */ }
   }
 
-  function renderLeaderboard(highlightIndex = -1) {
-    const scores = getScores().slice(0, 10);
+  async function renderLeaderboard(highlightName = null, highlightScore = null) {
+    leaderboardEl.innerHTML = "<li><span>Laddar…</span><span></span></li>";
+    const scores = await fetchScores();
+    const hi = highlightName !== null
+      ? scores.findIndex(s => s.name === highlightName && s.score === highlightScore)
+      : -1;
     leaderboardEl.innerHTML = scores.length
       ? scores.map((s, i) =>
-          `<li class="${i === highlightIndex ? "is-new" : ""}"><span>#${i + 1} ${s.name}</span><span>${s.score}</span></li>`
+          `<li class="${i === hi ? "is-new" : ""}"><span>#${i + 1} ${s.name}</span><span>${s.score}</span></li>`
         ).join("")
       : "<li><span>Inga poäng ännu</span><span></span></li>";
   }
@@ -610,31 +625,36 @@
     event.stopPropagation();
     pauseGame();
   });
-  saveButton.addEventListener("click", (event) => {
+  saveButton.addEventListener("click", async (event) => {
     event.stopPropagation();
-    const idx = addScore(nameInput.value, state.score);
+    const name = nameInput.value.trim() || "Anonym";
+    saveButton.disabled = true;
+    saveButton.textContent = "…";
+    await saveScore(name, state.score);
     nameEntry.classList.add("is-hidden");
     overlay.querySelector("p").style.display = "none";
-    renderLeaderboard(idx);
     leaderboardEl.classList.remove("is-hidden");
+    await renderLeaderboard(name, state.score);
     startButton.textContent = "Spela igen";
     startButton.classList.remove("is-hidden");
+    saveButton.disabled = false;
+    saveButton.textContent = "Spara";
   });
   nameInput.addEventListener("keydown", (event) => {
     event.stopPropagation();
     if (event.key === "Enter") saveButton.click();
   });
-  leaderboardButton.addEventListener("click", (event) => {
+  leaderboardButton.addEventListener("click", async (event) => {
     event.stopPropagation();
     state.mode = "leaderboard";
     overlay.querySelector("h1").textContent = "Topplista";
     overlay.querySelector("p").style.display = "none";
     nameEntry.classList.add("is-hidden");
-    renderLeaderboard();
     leaderboardEl.classList.remove("is-hidden");
     startButton.textContent = "Tillbaka";
     startButton.classList.remove("is-hidden");
     leaderboardButton.classList.add("is-hidden");
+    await renderLeaderboard();
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseGame();
