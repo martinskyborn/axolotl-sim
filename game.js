@@ -74,7 +74,7 @@
 
   async function fetchScores() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/scores?order=score.desc&limit=10`, { headers: sbHeaders });
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/scores?order=score.desc&limit=5`, { headers: sbHeaders });
       return res.ok ? res.json() : [];
     } catch { return []; }
   }
@@ -103,16 +103,14 @@
   }
 
   function resize() {
-    const appEl = document.getElementById("app");
-    const width = Math.max(320, Math.round(appEl.clientWidth));
-    const height = Math.max(560, Math.round(appEl.clientHeight));
+    const vp = window.visualViewport;
+    const width = Math.max(320, Math.round(vp ? vp.width : window.innerWidth));
+    const height = Math.max(560, Math.round(vp ? vp.height : window.innerHeight));
     state.dpr = 1;
     state.width = width;
     state.height = height;
     canvas.width = width;
     canvas.height = height;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     player.x = Math.max(78, width * 0.23);
   }
@@ -601,10 +599,10 @@
     }
   }
 
-  window.addEventListener("resize", () => {
-    resize();
-    render();
-  });
+  window.addEventListener("resize", () => { resize(); render(); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => { resize(); render(); });
+  }
   window.addEventListener("keydown", (event) => {
     if (event.code === "Space" || event.code === "ArrowUp") {
       event.preventDefault();
