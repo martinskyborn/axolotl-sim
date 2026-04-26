@@ -606,7 +606,8 @@
     state.mode = "ready";
     for (let i = 0; i < 14; i += 1) addAmbientBubble();
     render();
-    setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
+    const debugInfo = `v9 | screen:${screen.width}×${screen.height} inner:${window.innerWidth}×${window.innerHeight} canvas:${state.width}×${state.height}`;
+    setOverlay("Axolotl Sim", debugInfo, "Starta");
     leaderboardButton.classList.remove("is-hidden");
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
