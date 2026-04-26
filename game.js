@@ -102,10 +102,17 @@
       : "<li><span>Inga poäng ännu</span><span></span></li>";
   }
 
+  function getSafeAreaBottom() {
+    return parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue("--sab")
+    ) || 0;
+  }
+
   function resize() {
     const appEl = document.getElementById("app");
+    const sab = getSafeAreaBottom();
     const width = Math.max(320, appEl.offsetWidth);
-    const height = Math.max(560, appEl.offsetHeight);
+    const height = Math.max(560, appEl.offsetHeight + sab);
     state.dpr = 1;
     state.width = width;
     state.height = height;
@@ -308,22 +315,33 @@
     if (state.lives <= 0) gameOver();
   }
 
-  function gameOver() {
+  async function gameOver() {
     state.mode = "over";
     state.best = Math.max(state.best, state.score);
     localStorage.setItem("axolotl-best", String(state.best));
+
     overlay.querySelector("h1").textContent = "Bra jobbat!";
     const pEl = overlay.querySelector("p");
     pEl.textContent = `Poäng: ${state.score}  |  Bästa: ${state.best}`;
     pEl.style.display = "";
     startButton.classList.add("is-hidden");
     leaderboardButton.classList.add("is-hidden");
-    nameEntry.classList.remove("is-hidden");
+    nameEntry.classList.add("is-hidden");
     leaderboardEl.classList.add("is-hidden");
-    nameInput.value = "";
     overlay.classList.add("is-visible");
     pauseButton.classList.add("is-hidden");
-    setTimeout(() => nameInput.focus(), 80);
+
+    const scores = await fetchScores();
+    const qualifies = scores.length < 5 || state.score > scores[scores.length - 1].score;
+
+    if (qualifies) {
+      nameInput.value = "";
+      nameEntry.classList.remove("is-hidden");
+      setTimeout(() => nameInput.focus(), 80);
+    } else {
+      startButton.textContent = "Spela igen";
+      startButton.classList.remove("is-hidden");
+    }
   }
 
   function circleRectCollision(cx, cy, radius, rx, ry, rw, rh) {

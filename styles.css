@@ -2,6 +2,7 @@
   color-scheme: light;
   --ink: #153c68;
   --panel: rgba(255, 255, 255, 0.84);
+  --sab: env(safe-area-inset-bottom, 0px);
 }
 
 * {
@@ -24,7 +25,6 @@ body {
 #app {
   position: fixed;
   inset: 0;
-  overflow: hidden;
   background: #13b8ec;
 }
 
