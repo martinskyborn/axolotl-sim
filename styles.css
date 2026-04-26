@@ -29,8 +29,6 @@ body {
 }
 
 #game {
-  position: fixed;
-  inset: 0;
   display: block;
 }
 

@@ -103,14 +103,16 @@
   }
 
   function resize() {
-    const rect = canvas.getBoundingClientRect();
-    const width = Math.max(320, Math.round(rect.width));
-    const height = Math.max(560, Math.round(rect.height));
+    const appEl = document.getElementById("app");
+    const width = Math.max(320, appEl.offsetWidth);
+    const height = Math.max(560, appEl.offsetHeight);
     state.dpr = 1;
     state.width = width;
     state.height = height;
     canvas.width = width;
     canvas.height = height;
+    canvas.style.width = width + "px";
+    canvas.style.height = height + "px";
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     player.x = Math.max(78, width * 0.23);
   }
@@ -587,6 +589,7 @@
 
   async function boot() {
     resize();
+    setTimeout(() => { resize(); render(); }, 200);
     setOverlay("Laddar", "Snart kan axolotlen simma.", "Vänta");
     await Promise.all(Object.entries(ASSETS).map(([key, src]) => loadImage(key, src)));
     state.mode = "ready";
