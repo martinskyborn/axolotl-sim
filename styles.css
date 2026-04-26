@@ -29,6 +29,8 @@ body {
 }
 
 #game {
+  position: fixed;
+  inset: 0;
   display: block;
 }
 
@@ -250,24 +252,3 @@ body {
   display: none;
 }
 
-#rotate-msg {
-  display: none;
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  background: #0b6ea8;
-  color: white;
-  font-family: "Trebuchet MS", "Arial Rounded MT Bold", system-ui, sans-serif;
-  font-size: 22px;
-  font-weight: 900;
-  text-align: center;
-  place-items: center;
-  padding: 24px;
-  line-height: 1.4;
-}
-
-@media (orientation: landscape) {
-  #rotate-msg {
-    display: grid;
-  }
-}
