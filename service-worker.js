@@ -1,4 +1,4 @@
-const CACHE_NAME = "axolotl-sim-v8";
+const CACHE_NAME = "axolotl-sim-v9";
 const IMAGE_ASSETS = [
   "./assets/generated/background.png",
   "./assets/processed/axolotl-sheet.png",

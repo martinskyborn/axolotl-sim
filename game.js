@@ -102,17 +102,10 @@
       : "<li><span>Inga poäng ännu</span><span></span></li>";
   }
 
-  function getSafeAreaBottom() {
-    return parseFloat(
-      getComputedStyle(document.documentElement).getPropertyValue("--sab")
-    ) || 0;
-  }
-
   function resize() {
-    const appEl = document.getElementById("app");
-    const sab = getSafeAreaBottom();
-    const width = Math.max(320, appEl.offsetWidth);
-    const height = Math.max(560, appEl.offsetHeight + sab);
+    // screen.height = full logical screen height in CSS px, always correct on iOS
+    const width = Math.max(320, window.innerWidth);
+    const height = Math.max(560, screen.height);
     state.dpr = 1;
     state.width = width;
     state.height = height;
