@@ -105,7 +105,7 @@
   function resize() {
     // screen.height = full logical screen height in CSS px, always correct on iOS
     const width = Math.max(320, window.innerWidth);
-    const height = Math.max(560, screen.height);
+    const height = Math.max(560, window.innerHeight);
     state.dpr = 1;
     state.width = width;
     state.height = height;
