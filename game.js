@@ -424,6 +424,11 @@
   function drawBackground() {
     const bg = images.background;
     ctx.drawImage(bg, 0, 0, state.width, state.height);
+    // DEBUG: röd rad överst, grön rad längst ner på canvasen
+    ctx.fillStyle = "rgba(255,0,0,0.8)";
+    ctx.fillRect(0, 0, state.width, 6);
+    ctx.fillStyle = "rgba(0,255,0,0.8)";
+    ctx.fillRect(0, state.height - 6, state.width, 6);
   }
 
   function drawBubble(x, y, r, alpha = 0.55) {
@@ -606,8 +611,18 @@
     state.mode = "ready";
     for (let i = 0; i < 14; i += 1) addAmbientBubble();
     render();
-    const debugInfo = `v9 | screen:${screen.width}×${screen.height} inner:${window.innerWidth}×${window.innerHeight} canvas:${state.width}×${state.height}`;
-    setOverlay("Axolotl Sim", debugInfo, "Starta");
+    const appEl = document.getElementById("app");
+    const lines = [
+      `v10 scr:${screen.width}×${screen.height}`,
+      `inner:${window.innerWidth}×${window.innerHeight}`,
+      `buf:${canvas.width}×${canvas.height}`,
+      `clientWH:${canvas.clientWidth}×${canvas.clientHeight}`,
+      `app.off:${appEl.offsetWidth}×${appEl.offsetHeight}`,
+    ].join(" | ");
+    setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
+    // Visa debug litet i hörnet
+    const dbg = document.getElementById("debug-overlay");
+    if (dbg) dbg.textContent = lines;
     leaderboardButton.classList.remove("is-hidden");
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
