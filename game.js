@@ -103,14 +103,15 @@
   }
 
   function resize() {
-    const vp = window.visualViewport;
-    const width = Math.max(320, Math.round(vp ? vp.width : window.innerWidth));
-    const height = Math.max(560, Math.round(vp ? vp.height : window.innerHeight));
+    const width = Math.max(320, Math.round(window.innerWidth));
+    const height = Math.max(560, Math.round(window.innerHeight));
     state.dpr = 1;
     state.width = width;
     state.height = height;
     canvas.width = width;
     canvas.height = height;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     player.x = Math.max(78, width * 0.23);
   }
@@ -599,10 +600,11 @@
     }
   }
 
-  window.addEventListener("resize", () => { resize(); render(); });
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", () => { resize(); render(); });
-  }
+  window.addEventListener("resize", () => {
+    resize();
+    render();
+    if (window.innerWidth > window.innerHeight && state.mode === "playing") pauseGame();
+  });
   window.addEventListener("keydown", (event) => {
     if (event.code === "Space" || event.code === "ArrowUp") {
       event.preventDefault();
