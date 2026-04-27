@@ -103,7 +103,6 @@
   }
 
   function resize() {
-    // screen.height = full logical screen height in CSS px, always correct on iOS
     const width = Math.max(320, window.innerWidth);
     const height = Math.max(560, window.innerHeight);
     state.dpr = 1;
@@ -424,11 +423,20 @@
   function drawBackground() {
     const bg = images.background;
     ctx.drawImage(bg, 0, 0, state.width, state.height);
-    // DEBUG: röd rad överst, grön rad längst ner på canvasen
-    ctx.fillStyle = "rgba(255,0,0,0.8)";
-    ctx.fillRect(0, 0, state.width, 6);
-    ctx.fillStyle = "rgba(0,255,0,0.8)";
-    ctx.fillRect(0, state.height - 6, state.width, 6);
+  }
+
+  function matchBodyToBackground() {
+    try {
+      // Sampla bottenpixelns färg från canvasen och applicera på body/app
+      // så att iOS:s kontrollerade zon under viewport smälter ihop med spelet
+      const x = Math.floor(state.width / 2);
+      const y = state.height - 1;
+      const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
+      const color = `rgb(${r},${g},${b})`;
+      document.documentElement.style.background = color;
+      document.body.style.background = color;
+      document.getElementById("app").style.background = color;
+    } catch (e) { /* CORS eller annat - lämna som är */ }
   }
 
   function drawBubble(x, y, r, alpha = 0.55) {
@@ -611,18 +619,8 @@
     state.mode = "ready";
     for (let i = 0; i < 14; i += 1) addAmbientBubble();
     render();
-    const appEl = document.getElementById("app");
-    const lines = [
-      `v10 scr:${screen.width}×${screen.height}`,
-      `inner:${window.innerWidth}×${window.innerHeight}`,
-      `buf:${canvas.width}×${canvas.height}`,
-      `clientWH:${canvas.clientWidth}×${canvas.clientHeight}`,
-      `app.off:${appEl.offsetWidth}×${appEl.offsetHeight}`,
-    ].join(" | ");
+    matchBodyToBackground();
     setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
-    // Visa debug litet i hörnet
-    const dbg = document.getElementById("debug-overlay");
-    if (dbg) dbg.textContent = lines;
     leaderboardButton.classList.remove("is-hidden");
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
