@@ -32,6 +32,58 @@
         <span></span>
         <span></span>
       </button>
+
+      <!-- Bottom navigation bar -->
+      <nav id="bottomBar" class="bottom-bar is-hidden" aria-label="Spelkontroller">
+        <button id="barPauseBtn" class="bar-btn" aria-label="Pausa">
+          <svg viewBox="0 0 24 24" fill="none" width="26" height="26"><rect x="5" y="4" width="4" height="16" rx="2" fill="white"/><rect x="15" y="4" width="4" height="16" rx="2" fill="white"/></svg>
+        </button>
+        <div class="bar-stat">
+          <svg viewBox="0 0 24 24" width="22" height="22"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" fill="#ffe14a" stroke="#c8930a" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <span id="barScore">0</span>
+        </div>
+        <div class="bar-stat">
+          <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 21C12 21 3 13.5 3 8a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 5.5-9 13-9 13z" fill="#ff4488" stroke="#cc1166" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <span id="barLives">3</span>
+        </div>
+        <button id="barSoundBtn" class="bar-btn" aria-label="Ljud av/på">
+          <svg id="soundIcon" viewBox="0 0 24 24" width="26" height="26" fill="none">
+            <path d="M3 9v6h4l5 5V4L7 9H3z" fill="white"/>
+            <path id="soundWave1" d="M16.5 7.5a5 5 0 0 1 0 9" stroke="white" stroke-width="2" stroke-linecap="round" fill="none"/>
+            <path id="soundWave2" d="M19.07 5a9 9 0 0 1 0 14" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.6"/>
+          </svg>
+        </button>
+        <button id="barSettingsBtn" class="bar-btn" aria-label="Inställningar">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="white" stroke-width="2"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </nav>
+
+      <!-- Settings panel -->
+      <div id="settingsPanel" class="settings-panel is-hidden" role="dialog" aria-label="Inställningar">
+        <div class="settings-card">
+          <h2>Inställningar</h2>
+          <div class="settings-row">
+            <label for="volumeSlider">Volym</label>
+            <div class="slider-wrap">
+              <input id="volumeSlider" type="range" min="0" max="100" value="70" />
+              <span id="volumeVal">70%</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <label for="childModeToggle">Barnläge</label>
+            <label class="toggle">
+              <input id="childModeToggle" type="checkbox" />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </div>
+          <p class="settings-hint">Barnläge: bredare gap och lägre hastighet.</p>
+          <button id="settingsCloseBtn" class="settings-close-btn">Stäng</button>
+        </div>
+      </div>
+
     </main>
 <script src="game.js" defer></script>
   </body>

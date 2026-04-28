@@ -12,6 +12,19 @@
   const saveButton = document.getElementById("saveButton");
   const leaderboardEl = document.getElementById("leaderboardEl");
   const leaderboardButton = document.getElementById("leaderboardButton");
+  const bottomBar = document.getElementById("bottomBar");
+  const barPauseBtn = document.getElementById("barPauseBtn");
+  const barSoundBtn = document.getElementById("barSoundBtn");
+  const barSettingsBtn = document.getElementById("barSettingsBtn");
+  const barScore = document.getElementById("barScore");
+  const barLives = document.getElementById("barLives");
+  const soundWave1 = document.getElementById("soundWave1");
+  const soundWave2 = document.getElementById("soundWave2");
+  const settingsPanel = document.getElementById("settingsPanel");
+  const volumeSlider = document.getElementById("volumeSlider");
+  const volumeVal = document.getElementById("volumeVal");
+  const childModeToggle = document.getElementById("childModeToggle");
+  const settingsCloseBtn = document.getElementById("settingsCloseBtn");
 
   const ASSETS = {
     background: "assets/generated/background.png",
@@ -21,10 +34,17 @@
   };
 
   const images = {};
+  const settings = {
+    volume: 0.7,
+    musicMuted: false,
+    childMode: false
+  };
+
   const state = {
     mode: "loading",
     width: 390,
     height: 844,
+    barHeight: 0,
     dpr: 1,
     lastTime: 0,
     elapsed: 0,
@@ -53,6 +73,9 @@
   };
 
   let audioContext;
+  let musicGain;
+  let musicNodes = [];
+  let melodyTimeout;
 
   function loadImage(key, src) {
     return new Promise((resolve, reject) => {
@@ -114,6 +137,7 @@
     canvas.style.height = height + "px";
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     player.x = Math.max(78, width * 0.23);
+    updateBarHeight();
   }
 
   function setOverlay(title, text, button) {
@@ -128,11 +152,12 @@
     leaderboardButton.classList.add("is-hidden");
     overlay.classList.add("is-visible");
     pauseButton.classList.add("is-hidden");
+    hideBottomBar();
   }
 
   function hideOverlay() {
     overlay.classList.remove("is-visible");
-    pauseButton.classList.remove("is-hidden");
+    showBottomBar();
   }
 
   function unlockAudio() {
@@ -141,6 +166,7 @@
     if (!Ctx) return;
     audioContext = new Ctx();
     state.mutedUntilGesture = false;
+    startMusic();
   }
 
   function sound(type) {
@@ -185,6 +211,114 @@
     }
   }
 
+  // ── Background music (procedural, Web Audio) ──────────────
+  function startMusic() {
+    if (!audioContext || musicGain) return;
+
+    musicGain = audioContext.createGain();
+    musicGain.gain.value = settings.musicMuted ? 0 : settings.volume * 0.55;
+    musicGain.connect(audioContext.destination);
+
+    // Underwater low-pass filter
+    const filter = audioContext.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = 700;
+    filter.Q.value = 0.6;
+    filter.connect(musicGain);
+
+    function makeDrone(freq, vol) {
+      const osc = audioContext.createOscillator();
+      const g = audioContext.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      g.gain.value = vol;
+      osc.connect(g);
+      g.connect(filter);
+      osc.start();
+      musicNodes.push(osc);
+    }
+
+    makeDrone(55, 0.38);   // A1 bass drone
+    makeDrone(82.5, 0.22); // E2 fifth
+    makeDrone(110, 0.14);  // A2 octave
+
+    // Slow LFO on bass drone
+    const lfo = audioContext.createOscillator();
+    const lfoGain = audioContext.createGain();
+    lfo.frequency.value = 0.12;
+    lfoGain.gain.value = 6;
+    lfo.connect(lfoGain);
+    lfoGain.connect(musicNodes[0].frequency);
+    lfo.start();
+    musicNodes.push(lfo);
+
+    // Pentatonic melody notes: A3 C4 D4 E4 G4 A4
+    const scale = [220, 261.63, 293.66, 329.63, 392, 440, 523.25];
+    let melodyRunning = true;
+
+    function scheduleNote() {
+      if (!melodyRunning || !audioContext) return;
+      const freq = scale[Math.floor(Math.random() * scale.length)];
+      const now = audioContext.currentTime;
+      const noteOsc = audioContext.createOscillator();
+      const noteGain = audioContext.createGain();
+      noteOsc.type = "sine";
+      noteOsc.frequency.value = freq;
+      noteGain.gain.setValueAtTime(0.001, now);
+      noteGain.gain.linearRampToValueAtTime(0.065, now + 0.18);
+      noteGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
+      noteOsc.connect(noteGain);
+      noteGain.connect(filter);
+      noteOsc.start(now);
+      noteOsc.stop(now + 1.2);
+      const gap = 900 + Math.random() * 1400;
+      melodyTimeout = setTimeout(scheduleNote, gap);
+    }
+
+    scheduleNote();
+
+    // Store cleanup
+    musicNodes.push({ stop: () => { melodyRunning = false; clearTimeout(melodyTimeout); } });
+  }
+
+  function stopMusic() {
+    clearTimeout(melodyTimeout);
+    for (const n of musicNodes) {
+      try { if (n.stop) n.stop(); } catch (e) {}
+    }
+    musicNodes = [];
+    musicGain = null;
+  }
+
+  function updateMusicVolume() {
+    if (!musicGain) return;
+    musicGain.gain.setTargetAtTime(
+      settings.musicMuted ? 0 : settings.volume * 0.55,
+      audioContext.currentTime, 0.1
+    );
+  }
+
+  function updateSoundIcon() {
+    const muted = settings.musicMuted;
+    soundWave1.setAttribute("opacity", muted ? "0.2" : "1");
+    soundWave2.setAttribute("opacity", muted ? "0.1" : "0.6");
+  }
+
+  function updateBarHeight() {
+    state.barHeight = bottomBar.classList.contains("is-hidden") ? 0 : bottomBar.offsetHeight;
+  }
+
+  function showBottomBar() {
+    bottomBar.classList.remove("is-hidden");
+    pauseButton.classList.add("is-hidden");
+    updateBarHeight();
+  }
+
+  function hideBottomBar() {
+    bottomBar.classList.add("is-hidden");
+    updateBarHeight();
+  }
+
   function resetGame() {
     state.mode = "playing";
     state.elapsed = 0;
@@ -207,7 +341,7 @@
 
   function startOrResume() {
     unlockAudio();
-    if (audioContext?.state === "suspended") audioContext.resume();
+    if (audioContext?.state === "suspended") { audioContext.resume(); startMusic(); }
     if (state.mode === "loading") return;
     if (state.mode === "leaderboard") {
       state.mode = "ready";
@@ -245,10 +379,13 @@
 
   function difficulty() {
     const level = Math.min(1, state.elapsed / 75);
+    const child = settings.childMode;
     return {
-      speed: 136 + level * 112 + Math.min(48, state.score * 2.1),
-      gap: Math.max(164, 250 - level * 68 - Math.min(28, state.score * 0.8)),
-      interval: Math.max(1.05, 1.72 - level * 0.42)
+      speed:    (child ? 0.72 : 1) * (136 + level * 112 + Math.min(48, state.score * 2.1)),
+      gap:      child
+                  ? Math.max(220, 320 - level * 55 - Math.min(20, state.score * 0.5))
+                  : Math.max(164, 250 - level * 68 - Math.min(28, state.score * 0.8)),
+      interval: Math.max(child ? 1.4 : 1.05, (child ? 2.1 : 1.72) - level * 0.42)
     };
   }
 
@@ -322,6 +459,7 @@
     leaderboardEl.classList.add("is-hidden");
     overlay.classList.add("is-visible");
     pauseButton.classList.add("is-hidden");
+    hideBottomBar();
 
     const scores = await fetchScores();
     const qualifies = scores.length < 5 || state.score > scores[scores.length - 1].score;
@@ -409,13 +547,14 @@
     state.bubbles = state.bubbles.filter((bubble) => bubble.y + bubble.r > -20);
     state.ripples = state.ripples.filter((ripple) => ripple.age < ripple.life);
 
+    const floorY = state.height - state.barHeight - 66;
     if (player.y < 48) {
       player.y = 48;
       player.vy = 60;
     }
-    if (player.y > state.height - 78) hitPlayer();
-    if (player.y > state.height - 66) {
-      player.y = state.height - 66;
+    if (player.y > floorY - 12) hitPlayer();
+    if (player.y > floorY) {
+      player.y = floorY;
       player.vy = -180;
     }
   }
@@ -562,11 +701,9 @@
   }
 
   function drawHud() {
-    const safeTop = Math.max(32, 22 + (window.visualViewport ? Math.max(0, window.innerHeight - window.visualViewport.height) : 0));
-    strokeText(`Poäng: ${state.score}`, state.width / 2, safeTop + 28, Math.min(42, state.width * 0.1));
-    const heartSize = Math.min(42, state.width * 0.1);
-    drawHeart(state.width - 86, safeTop + 28, heartSize);
-    strokeText(String(state.lives), state.width - 42, safeTop + 29, Math.min(42, state.width * 0.1), "left");
+    // Update bottom bar DOM elements
+    barScore.textContent = state.score;
+    barLives.textContent = state.lives;
   }
 
   function drawRipples() {
@@ -622,6 +759,7 @@
     matchBodyToBackground();
     setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
     leaderboardButton.classList.remove("is-hidden");
+    updateSoundIcon();
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
     }
@@ -681,6 +819,41 @@
   });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) pauseGame();
+  });
+
+  // Bottom bar buttons
+  barPauseBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (state.mode === "playing") pauseGame();
+    else if (state.mode === "paused") startOrResume();
+  });
+
+  barSoundBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    settings.musicMuted = !settings.musicMuted;
+    updateMusicVolume();
+    updateSoundIcon();
+  });
+
+  barSettingsBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (state.mode === "playing") pauseGame();
+    settingsPanel.classList.remove("is-hidden");
+  });
+
+  settingsCloseBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    settingsPanel.classList.add("is-hidden");
+  });
+
+  volumeSlider.addEventListener("input", () => {
+    settings.volume = volumeSlider.value / 100;
+    volumeVal.textContent = volumeSlider.value + "%";
+    updateMusicVolume();
+  });
+
+  childModeToggle.addEventListener("change", () => {
+    settings.childMode = childModeToggle.checked;
   });
 
   boot().catch(() => {
