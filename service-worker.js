@@ -1,11 +1,12 @@
-const CACHE_NAME = "axolotl-sim-v13";
+const CACHE_NAME = "axolotl-sim-v14";
 const IMAGE_ASSETS = [
   "./assets/generated/background.png",
   "./assets/processed/axolotl-sheet.png",
   "./assets/processed/kelp-sheet.png",
   "./assets/processed/star-sheet.png",
   "./assets/processed/icon-192.png",
-  "./assets/processed/icon-512.png"
+  "./assets/processed/icon-512.png",
+  "./assets/axolotl-seaweed-drift.mp3"
 ];
 
 self.addEventListener("install", (event) => {

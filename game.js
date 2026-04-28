@@ -73,9 +73,9 @@
   };
 
   let audioContext;
-  let musicGain;
-  let musicNodes = [];
-  let melodyTimeout;
+  const music = new Audio("assets/axolotl-seaweed-drift.mp3");
+  music.loop = true;
+  music.preload = "auto";
 
   function loadImage(key, src) {
     return new Promise((resolve, reject) => {
@@ -126,15 +126,14 @@
   }
 
   function resize() {
-    const width = Math.max(320, window.innerWidth);
-    const height = Math.max(560, window.innerHeight);
+    const rect = canvas.getBoundingClientRect();
+    const width = Math.max(320, Math.round(rect.width));
+    const height = Math.max(560, Math.round(rect.height));
     state.dpr = 1;
     state.width = width;
     state.height = height;
     canvas.width = width;
     canvas.height = height;
-    canvas.style.width = width + "px";
-    canvas.style.height = height + "px";
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     player.x = Math.max(78, width * 0.23);
     updateBarHeight();
@@ -211,91 +210,18 @@
     }
   }
 
-  // ── Background music (procedural, Web Audio) ──────────────
+  // ── Background music (MP3) ────────────────────────────────
   function startMusic() {
-    if (!audioContext || musicGain) return;
-
-    musicGain = audioContext.createGain();
-    musicGain.gain.value = settings.musicMuted ? 0 : settings.volume * 0.55;
-    musicGain.connect(audioContext.destination);
-
-    // Underwater low-pass filter
-    const filter = audioContext.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 700;
-    filter.Q.value = 0.6;
-    filter.connect(musicGain);
-
-    function makeDrone(freq, vol) {
-      const osc = audioContext.createOscillator();
-      const g = audioContext.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      g.gain.value = vol;
-      osc.connect(g);
-      g.connect(filter);
-      osc.start();
-      musicNodes.push(osc);
-    }
-
-    makeDrone(55, 0.38);   // A1 bass drone
-    makeDrone(82.5, 0.22); // E2 fifth
-    makeDrone(110, 0.14);  // A2 octave
-
-    // Slow LFO on bass drone
-    const lfo = audioContext.createOscillator();
-    const lfoGain = audioContext.createGain();
-    lfo.frequency.value = 0.12;
-    lfoGain.gain.value = 6;
-    lfo.connect(lfoGain);
-    lfoGain.connect(musicNodes[0].frequency);
-    lfo.start();
-    musicNodes.push(lfo);
-
-    // Pentatonic melody notes: A3 C4 D4 E4 G4 A4
-    const scale = [220, 261.63, 293.66, 329.63, 392, 440, 523.25];
-    let melodyRunning = true;
-
-    function scheduleNote() {
-      if (!melodyRunning || !audioContext) return;
-      const freq = scale[Math.floor(Math.random() * scale.length)];
-      const now = audioContext.currentTime;
-      const noteOsc = audioContext.createOscillator();
-      const noteGain = audioContext.createGain();
-      noteOsc.type = "sine";
-      noteOsc.frequency.value = freq;
-      noteGain.gain.setValueAtTime(0.001, now);
-      noteGain.gain.linearRampToValueAtTime(0.065, now + 0.18);
-      noteGain.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
-      noteOsc.connect(noteGain);
-      noteGain.connect(filter);
-      noteOsc.start(now);
-      noteOsc.stop(now + 1.2);
-      const gap = 900 + Math.random() * 1400;
-      melodyTimeout = setTimeout(scheduleNote, gap);
-    }
-
-    scheduleNote();
-
-    // Store cleanup
-    musicNodes.push({ stop: () => { melodyRunning = false; clearTimeout(melodyTimeout); } });
+    music.volume = settings.musicMuted ? 0 : settings.volume;
+    music.play().catch(() => { /* autoplay blocked, will retry on next gesture */ });
   }
 
   function stopMusic() {
-    clearTimeout(melodyTimeout);
-    for (const n of musicNodes) {
-      try { if (n.stop) n.stop(); } catch (e) {}
-    }
-    musicNodes = [];
-    musicGain = null;
+    music.pause();
   }
 
   function updateMusicVolume() {
-    if (!musicGain) return;
-    musicGain.gain.setTargetAtTime(
-      settings.musicMuted ? 0 : settings.volume * 0.55,
-      audioContext.currentTime, 0.1
-    );
+    music.volume = settings.musicMuted ? 0 : settings.volume;
   }
 
   function updateSoundIcon() {
@@ -564,20 +490,6 @@
     ctx.drawImage(bg, 0, 0, state.width, state.height);
   }
 
-  function matchBodyToBackground() {
-    try {
-      // Sampla bottenpixelns färg från canvasen och applicera på body/app
-      // så att iOS:s kontrollerade zon under viewport smälter ihop med spelet
-      const x = Math.floor(state.width / 2);
-      const y = state.height - 1;
-      const [r, g, b] = ctx.getImageData(x, y, 1, 1).data;
-      const color = `rgb(${r},${g},${b})`;
-      document.documentElement.style.background = color;
-      document.body.style.background = color;
-      document.getElementById("app").style.background = color;
-    } catch (e) { /* CORS eller annat - lämna som är */ }
-  }
-
   function drawBubble(x, y, r, alpha = 0.55) {
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -756,7 +668,6 @@
     state.mode = "ready";
     for (let i = 0; i < 14; i += 1) addAmbientBubble();
     render();
-    matchBodyToBackground();
     setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
     leaderboardButton.classList.remove("is-hidden");
     updateSoundIcon();
