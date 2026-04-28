@@ -25,6 +25,7 @@
   const volumeVal = document.getElementById("volumeVal");
   const childModeToggle = document.getElementById("childModeToggle");
   const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+  const settingsOverlayBtn = document.getElementById("settingsOverlayBtn");
 
   const ASSETS = {
     background: "assets/generated/background.png",
@@ -149,6 +150,7 @@
     nameEntry.classList.add("is-hidden");
     leaderboardEl.classList.add("is-hidden");
     leaderboardButton.classList.add("is-hidden");
+    settingsOverlayBtn.classList.add("is-hidden");
     overlay.classList.add("is-visible");
     pauseButton.classList.add("is-hidden");
     hideBottomBar();
@@ -273,6 +275,7 @@
       state.mode = "ready";
       setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
       leaderboardButton.classList.remove("is-hidden");
+      settingsOverlayBtn.classList.remove("is-hidden");
       return;
     }
     if (state.mode === "paused") {
@@ -291,6 +294,7 @@
     if (state.mode !== "playing") return;
     state.mode = "paused";
     setOverlay("Paus", `Poäng: ${state.score}`, "Fortsätt");
+    settingsOverlayBtn.classList.remove("is-hidden");
   }
 
   function flap() {
@@ -670,6 +674,7 @@
     render();
     setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
     leaderboardButton.classList.remove("is-hidden");
+    settingsOverlayBtn.classList.remove("is-hidden");
     updateSoundIcon();
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("service-worker.js").catch(() => {});
@@ -755,6 +760,11 @@
   settingsCloseBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     settingsPanel.classList.add("is-hidden");
+  });
+
+  settingsOverlayBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    settingsPanel.classList.remove("is-hidden");
   });
 
   volumeSlider.addEventListener("input", () => {
