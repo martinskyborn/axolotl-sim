@@ -253,17 +253,17 @@ body {
   display: none;
 }
 
-/* ── Bottom navigation bar ─────────────────────────────────── */
+/* ── Top navigation bar ─────────────────────────────────── */
 .bottom-bar {
   position: fixed;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  height: calc(78px + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
+  height: calc(72px + env(safe-area-inset-top));
+  padding-top: env(safe-area-inset-top);
   background: linear-gradient(180deg, #3aade0 0%, #2292cc 100%);
-  border-radius: 18px 18px 0 0;
-  box-shadow: 0 -4px 18px rgba(0, 60, 120, 0.35);
+  border-radius: 0 0 18px 18px;
+  box-shadow: 0 4px 18px rgba(0, 60, 120, 0.35);
   display: flex;
   align-items: center;
   justify-content: space-around;

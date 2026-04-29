@@ -74,9 +74,12 @@
   };
 
   let audioContext;
+  let musicGain;
+  let musicSource;
   const music = new Audio("assets/axolotl-seaweed-drift.mp3");
   music.loop = true;
   music.preload = "auto";
+  music.crossOrigin = "anonymous";
 
   function loadImage(key, src) {
     return new Promise((resolve, reject) => {
@@ -153,12 +156,12 @@
     settingsOverlayBtn.classList.add("is-hidden");
     overlay.classList.add("is-visible");
     pauseButton.classList.add("is-hidden");
-    hideBottomBar();
+    updateBarHeight();
   }
 
   function hideOverlay() {
     overlay.classList.remove("is-visible");
-    showBottomBar();
+    updateBarHeight();
   }
 
   function unlockAudio() {
@@ -167,6 +170,13 @@
     if (!Ctx) return;
     audioContext = new Ctx();
     state.mutedUntilGesture = false;
+    try {
+      musicSource = audioContext.createMediaElementSource(music);
+      musicGain = audioContext.createGain();
+      musicGain.gain.value = settings.musicMuted ? 0 : settings.volume;
+      musicSource.connect(musicGain);
+      musicGain.connect(audioContext.destination);
+    } catch { /* already connected or not supported */ }
     startMusic();
   }
 
@@ -214,7 +224,12 @@
 
   // ── Background music (MP3) ────────────────────────────────
   function startMusic() {
-    music.volume = settings.musicMuted ? 0 : settings.volume;
+    if (musicGain) {
+      musicGain.gain.value = settings.musicMuted ? 0 : settings.volume;
+    } else {
+      // fallback before audio is unlocked / on browsers that allow direct volume
+      music.volume = settings.musicMuted ? 0 : settings.volume;
+    }
     music.play().catch(() => { /* autoplay blocked, will retry on next gesture */ });
   }
 
@@ -223,7 +238,9 @@
   }
 
   function updateMusicVolume() {
-    music.volume = settings.musicMuted ? 0 : settings.volume;
+    const v = settings.musicMuted ? 0 : settings.volume;
+    if (musicGain) musicGain.gain.value = v;
+    else music.volume = v;
   }
 
   function updateSoundIcon() {
@@ -233,18 +250,8 @@
   }
 
   function updateBarHeight() {
-    state.barHeight = bottomBar.classList.contains("is-hidden") ? 0 : bottomBar.offsetHeight;
-  }
-
-  function showBottomBar() {
     bottomBar.classList.remove("is-hidden");
-    pauseButton.classList.add("is-hidden");
-    updateBarHeight();
-  }
-
-  function hideBottomBar() {
-    bottomBar.classList.add("is-hidden");
-    updateBarHeight();
+    state.barHeight = bottomBar.offsetHeight;
   }
 
   function resetGame() {
@@ -321,7 +328,7 @@
 
   function spawnObstacle() {
     const d = difficulty();
-    const marginTop = Math.max(116, state.height * 0.15);
+    const marginTop = Math.max(state.barHeight + 80, state.height * 0.15);
     const marginBottom = Math.max(122, state.height * 0.16);
     const centerMin = marginTop + d.gap / 2;
     const centerMax = state.height - marginBottom - d.gap / 2;
@@ -341,7 +348,9 @@
   function spawnStar() {
     const d = difficulty();
     const x = state.width + 84;
-    const y = 145 + Math.random() * (state.height - 290);
+    const yMin = state.barHeight + 80;
+    const yMax = state.height - 145;
+    const y = yMin + Math.random() * Math.max(40, yMax - yMin);
     state.stars.push({
       x,
       y,
@@ -389,7 +398,7 @@
     leaderboardEl.classList.add("is-hidden");
     overlay.classList.add("is-visible");
     pauseButton.classList.add("is-hidden");
-    hideBottomBar();
+    updateBarHeight();
 
     const scores = await fetchScores();
     const qualifies = scores.length < 5 || state.score > scores[scores.length - 1].score;
@@ -401,6 +410,7 @@
     } else {
       startButton.textContent = "Spela igen";
       startButton.classList.remove("is-hidden");
+      leaderboardButton.classList.remove("is-hidden");
     }
   }
 
@@ -477,9 +487,10 @@
     state.bubbles = state.bubbles.filter((bubble) => bubble.y + bubble.r > -20);
     state.ripples = state.ripples.filter((ripple) => ripple.age < ripple.life);
 
-    const floorY = state.height - state.barHeight - 66;
-    if (player.y < 48) {
-      player.y = 48;
+    const ceilY = state.barHeight + 36;
+    const floorY = state.height - 66;
+    if (player.y < ceilY) {
+      player.y = ceilY;
       player.vy = 60;
     }
     if (player.y > floorY - 12) hitPlayer();
@@ -664,12 +675,39 @@
     if (state.mode === "playing") requestAnimationFrame(loop);
   }
 
+  function applySeabedBlend() {
+    const bg = images.background;
+    if (!bg) return;
+    try {
+      const c = document.createElement("canvas");
+      c.width = bg.width;
+      c.height = 1;
+      const cx = c.getContext("2d");
+      cx.drawImage(bg, 0, bg.height - 1, bg.width, 1, 0, 0, bg.width, 1);
+      const data = cx.getImageData(0, 0, bg.width, 1).data;
+      let r = 0, g = 0, b = 0;
+      const step = Math.max(1, Math.floor(bg.width / 32));
+      let n = 0;
+      for (let i = 0; i < bg.width; i += step) {
+        const k = i * 4;
+        r += data[k]; g += data[k + 1]; b += data[k + 2];
+        n += 1;
+      }
+      r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+      const col = `rgb(${r},${g},${b})`;
+      document.body.style.background = col;
+      const app = document.getElementById("app");
+      if (app) app.style.background = col;
+    } catch { /* CORS or other; ignore */ }
+  }
+
   async function boot() {
     resize();
     setTimeout(() => { resize(); render(); }, 200);
     setOverlay("Laddar", "Snart kan axolotlen simma.", "Vänta");
     await Promise.all(Object.entries(ASSETS).map(([key, src]) => loadImage(key, src)));
     state.mode = "ready";
+    applySeabedBlend();
     for (let i = 0; i < 14; i += 1) addAmbientBubble();
     render();
     setOverlay("Axolotl Sim", "Tryck för att simma uppåt. Samla stjärnor och undvik tången.", "Starta");
